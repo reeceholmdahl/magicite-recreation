@@ -1,5 +1,5 @@
 import * as ENGINE from '../engine/engine.js';
-import { getActiveKeys } from '../engine/keyboard_input.js';
+import { PlayerMovement } from './functions.js';
 
 // Called first, initializes the renderer
 ENGINE.Renderer.init();
@@ -7,73 +7,6 @@ ENGINE.Renderer.init();
 /**
  * Placholder for loading game assets, none currently
  */
-
-// COMMENT HERE HELLO I COMMIT FROM NEW GAME REPO
-
-// Player movement
-class playerInput {
-    
-    constructor(physbody) {
-        this.physbody = physbody;
-        this.lastUp = false;
-        this.hasDoubleJumped = false;
-    }
-
-    movement() {
-
-        // Movement constants
-        const move = 500;
-        const jump = 1200;
-        const doubleJumpMod = 1.025;
-
-        // Get current active keys
-        const activeKeys = getActiveKeys();
-
-        // Boolean key checkers for given direction movement
-        const left = activeKeys.a || activeKeys.ArrowLeft;
-        const right = activeKeys.d || activeKeys.ArrowRight;
-        const up = activeKeys.w || activeKeys.ArrowUp || activeKeys[' '];
-        const down = activeKeys.s || activeKeys.ArrowDown; // implement crouching?
-
-        // Variables for calculated velocities for x and y
-        let dx = 0;
-        let dy = 0;
-
-        // Horizontal movement
-        if (left && !right) {
-            dx = -move;
-        } else if (right && !left) {
-            dx = move;
-        }
-
-        // // Vertical movement
-        // if (up && !down) {
-        //     dy = -move;
-        // } else if (down && !up) {
-        //     dy = move;
-        // }
-
-        // Jumping and double jump logic
-        if (up && this.physbody.grounded && !this.lastUp) {
-            this.physbody.vy = -jump;
-        } else if (up && !this.physbody.grounded && !this.hasDoubleJumped && !this.lastUp) {
-            this.physbody.vy = -jump * doubleJumpMod;
-            this.hasDoubleJumped = true;
-        } else if (this.physbody.grounded) {
-            this.hasDoubleJumped = false;
-        }
-
-        // Logic to check if the up key has been released or not
-        if (up) {
-            this.lastUp = true;
-        } else {
-            this.lastUp = false;
-        }
-
-        // Set physbody velocities to calculated velocities
-        this.physbody.vx = dx;
-    }
-}
 
 const dev_scene = new ENGINE.Scene((resources, container) => {
 
@@ -88,7 +21,7 @@ const dev_scene = new ENGINE.Scene((resources, container) => {
     // Scene options
     dev_scene.options = {
         backgroundColor: colors.BACKGROUND,
-        debug: false,
+        debug: true,
     };
 
     // Build player
@@ -113,14 +46,19 @@ const dev_scene = new ENGINE.Scene((resources, container) => {
     const PHYS_DT = 1 / 30;
 
     // Player movement class
-    const movement = new playerInput(player);
+    const movement = new PlayerMovement(player);
 
     // Player movement ticker function
     const movementHandler = new ENGINE.TickerFunction(() => {
-        movement.movement();
+        movement.useHorizontalMovementAccelerative();
+        // movement.useSingleJump();
+        movement.useMultipleJumps();
+        movement.applyMovement();
     }, this, 1);
 
     const physics = new ENGINE.TickerFunction(() => {
+
+        // console.log(player.vx);
 
         ENGINE.Physics.step(PHYS_DT);
 
@@ -137,86 +75,9 @@ const dev_scene = new ENGINE.Scene((resources, container) => {
     dev_scene.functions.push(movementHandler, physics);
 });
 
-const test_scene = new ENGINE.Scene((resources, container) => {
+const MENU_SCENE = new ENGINE.Scene((resources, container) => {
 
-    test_scene.options = {
-        debug: true,
-        backgroundColor: 0x222244,
-    };
-
-    const playerSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
-    const player = new ENGINE.DynamicBody({x: 100, y: 100}, 100, 100, playerSprite).setParent(container);
-    playerSprite.anchor.set(0.5);
-    playerSprite.width = 80;
-    playerSprite.height = 80;
-    playerSprite.tint = 0xddddff;
-
-    const test = new ENGINE.StandardBody({x: 300, y: 250}, 200, 200).setParent(container);
-
-    const movement = new playerInput(player);
-
-    const movementFunction = new ENGINE.TickerFunction(() => { movement.movement() }, this, 1);
-
-    const physics = new ENGINE.TickerFunction(() => {
-
-        ENGINE.Physics.step(1/20);
-
-        ENGINE.CollisionHandler.checkAllCollisions();
-
-        ENGINE.CollisionHandler.resolveAllCollisions();
-
-        ENGINE.Physics.updateSprites();
-
-        // // console.log(ENGINE.Renderer.ticker.FPS);
-
-        // const newTime = performance.now();
-        // const frameTime = (newTime - currentTime) / 1000;
-        // // console.log(frameTime)
-        // currentTime = newTime;
-
-        // player._lastFrame.x = player.x;
-        // player._lastFrame.y = player.y;
-
-        // const dt = 1/30;
-
-        // accumulator += frameTime;
-
-        // while (accumulator >= dt) {
-
-        //     player._last.x = player.x;
-        //     player._last.y = player.y;
-        //     player._last.vx = player.vx;
-        //     player._last.vy = player.vy;
-            
-        //     player.vx += player.ax * dt;
-        //     player.vy += player.ay * dt;
-
-        //     player.x += player.vx * dt
-        //     player.y += player.vy * dt
-
-        //     ENGINE.CollisionHandler.checkAllCollisions();
-
-        //     ENGINE.CollisionHandler.resolveAllCollisions();
-
-        //     accumulator -= dt;
-        // }
-
-        // const alpha = accumulator / dt;
-
-        // // console.log(i);
-
-        // // player.vx = player.vx * alpha + player._last.vx * (1.0 - alpha);
-        // // player.vy = player.vy * alpha + player._last.vy * (1.0 - alpha);
-        // // console.log(accumulator);
-
-        // // ENGINE.Physics.step();
-
-        // player.updateSprite(alpha);
-
-        // // ENGINE.Physics.updateSprites();
-    });
-
-    test_scene.functions.push(movementFunction, physics);
+    const testButtonSprite = new PIXI.Sprite()
 });
 
 // Loads the default scene
